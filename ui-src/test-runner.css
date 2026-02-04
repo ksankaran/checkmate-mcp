@@ -6,8 +6,8 @@
 
 body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  background: var(--vscode-editor-background, #1e1e1e);
-  color: var(--vscode-editor-foreground, #d4d4d4);
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  color: #eee;
   padding: 16px;
   min-height: 100vh;
 }
@@ -23,11 +23,14 @@ body {
   gap: 12px;
   margin-bottom: 20px;
   padding-bottom: 16px;
-  border-bottom: 1px solid var(--vscode-panel-border, #404040);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .logo {
   font-size: 28px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 10px;
+  padding: 8px;
 }
 
 .header-content {
@@ -38,11 +41,12 @@ body {
   font-size: 18px;
   font-weight: 600;
   margin-bottom: 4px;
+  color: #fff;
 }
 
 .subtitle {
   font-size: 13px;
-  color: var(--vscode-descriptionForeground, #888);
+  color: #888;
 }
 
 .loading {
@@ -51,14 +55,14 @@ body {
   align-items: center;
   justify-content: center;
   padding: 60px 20px;
-  color: var(--vscode-descriptionForeground, #888);
+  color: #888;
 }
 
 .spinner {
   width: 32px;
   height: 32px;
-  border: 3px solid var(--vscode-panel-border, #404040);
-  border-top-color: var(--vscode-textLink-foreground, #3794ff);
+  border: 3px solid rgba(255, 255, 255, 0.1);
+  border-top-color: #667eea;
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin-bottom: 16px;
@@ -75,9 +79,9 @@ body {
 }
 
 .step {
-  background: var(--vscode-editor-background, #252526);
-  border: 1px solid var(--vscode-panel-border, #404040);
-  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
   overflow: hidden;
 }
 
@@ -92,8 +96,8 @@ body {
   width: 28px;
   height: 28px;
   border-radius: 50%;
-  background: var(--vscode-badge-background, #4d4d4d);
-  color: var(--vscode-badge-foreground, #fff);
+  background: rgba(102, 126, 234, 0.2);
+  color: #667eea;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -103,15 +107,18 @@ body {
 }
 
 .step.passed .step-number {
-  background: #2e7d32;
+  background: rgba(34, 197, 94, 0.2);
+  color: #22c55e;
 }
 
 .step.failed .step-number {
-  background: #c62828;
+  background: rgba(239, 68, 68, 0.2);
+  color: #ef4444;
 }
 
 .step.skipped .step-number {
-  background: #757575;
+  background: rgba(156, 163, 175, 0.2);
+  color: #9ca3af;
 }
 
 .step-content {
@@ -125,11 +132,12 @@ body {
   display: flex;
   align-items: center;
   gap: 8px;
+  color: #fff;
 }
 
 .step-target {
   font-size: 12px;
-  color: var(--vscode-descriptionForeground, #888);
+  color: #888;
   font-family: monospace;
 }
 
@@ -148,50 +156,52 @@ body {
 }
 
 .badge-retried {
-  background: #f57c00;
-  color: #fff;
+  background: rgba(245, 158, 11, 0.2);
+  color: #f59e0b;
 }
 
 .step-duration {
   font-size: 11px;
-  color: var(--vscode-descriptionForeground, #666);
+  color: #666;
   flex-shrink: 0;
 }
 
 .step-error {
-  background: var(--vscode-inputValidation-errorBackground, #5a1d1d);
+  background: rgba(239, 68, 68, 0.1);
   padding: 12px 16px;
   font-size: 13px;
-  color: var(--vscode-errorForeground, #f48771);
-  border-top: 1px solid var(--vscode-inputValidation-errorBorder, #be1100);
+  color: #ef4444;
+  border-top: 1px solid rgba(239, 68, 68, 0.3);
 }
 
 .step-screenshot {
   padding: 12px 16px;
-  border-top: 1px solid var(--vscode-panel-border, #404040);
-  background: var(--vscode-editor-background, #1a1a1a);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.2);
 }
 
 .step-screenshot img {
   max-width: 100%;
-  border-radius: 4px;
-  border: 1px solid var(--vscode-panel-border, #404040);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .summary {
-  background: var(--vscode-editor-background, #252526);
-  border: 1px solid var(--vscode-panel-border, #404040);
-  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
   padding: 20px;
   margin-top: 20px;
 }
 
 .summary.passed {
-  border-color: #2e7d32;
+  border-color: rgba(34, 197, 94, 0.5);
+  background: rgba(34, 197, 94, 0.1);
 }
 
 .summary.failed {
-  border-color: #c62828;
+  border-color: rgba(239, 68, 68, 0.5);
+  background: rgba(239, 68, 68, 0.1);
 }
 
 .summary-header {
@@ -208,6 +218,7 @@ body {
 .summary-title {
   font-size: 18px;
   font-weight: 600;
+  color: #fff;
 }
 
 .summary-stats {
@@ -222,18 +233,19 @@ body {
 .summary-stat-value {
   font-size: 24px;
   font-weight: 700;
+  color: #fff;
 }
 
 .summary-stat-label {
   font-size: 12px;
-  color: var(--vscode-descriptionForeground, #888);
+  color: #888;
   text-transform: uppercase;
 }
 
 .error {
-  background: var(--vscode-inputValidation-errorBackground, #5a1d1d);
-  border: 1px solid var(--vscode-inputValidation-errorBorder, #be1100);
-  border-radius: 4px;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 12px;
   padding: 12px 16px;
-  color: var(--vscode-errorForeground, #f48771);
+  color: #ef4444;
 }
