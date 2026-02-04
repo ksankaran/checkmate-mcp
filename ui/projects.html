@@ -215,6 +215,41 @@
         -webkit-box-orient: vertical;
         overflow: hidden;
       }
+
+      .project-card:active {
+        transform: scale(0.98);
+      }
+
+      .click-hint {
+        font-size: 11px;
+        color: #667eea;
+        margin-top: 12px;
+        opacity: 0;
+        transition: opacity 0.2s ease;
+      }
+
+      .project-card:hover .click-hint {
+        opacity: 1;
+      }
+
+      .toast {
+        position: fixed;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #333;
+        color: #fff;
+        padding: 12px 24px;
+        border-radius: 8px;
+        font-size: 14px;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+        z-index: 1000;
+      }
+
+      .toast.show {
+        opacity: 1;
+      }
     </style>
   </head>
   <body>
@@ -240,6 +275,8 @@
 
       <div id="error" class="error-state" style="display: none;"></div>
     </div>
+
+    <div class="toast" id="toast"></div>
 
     <script>
       // MCP App Communication
@@ -271,6 +308,31 @@
 
       function sendNotification(method, params) {
         window.parent.postMessage({ jsonrpc: '2.0', method, params: params || {} }, '*');
+      }
+
+      // Send a message to the host chat to trigger an action
+      function sendMessage(text) {
+        return sendRequest('ui/message', {
+          role: 'user',
+          content: [{ type: 'text', text }]
+        });
+      }
+
+      function showToast(message) {
+        const toast = document.getElementById('toast');
+        toast.textContent = message;
+        toast.classList.add('show');
+        setTimeout(() => toast.classList.remove('show'), 3000);
+      }
+
+      async function viewProject(projectId, projectName) {
+        showToast(`Viewing test cases for: ${projectName}`);
+        try {
+          await sendMessage(`List test cases in project ${projectId}`);
+        } catch (error) {
+          console.error('Failed to send message:', error);
+          showToast('Failed to request test cases');
+        }
       }
 
       window.addEventListener('message', (event) => {
@@ -323,15 +385,16 @@
         container.style.display = 'grid';
         container.innerHTML = projects.map(project => {
           const icon = getProjectIcon(project.name);
+          const safeName = escapeHtml(project.name).replace(/'/g, "\\'");
           return `
-            <div class="project-card" data-id="${project.id}">
+            <div class="project-card" data-id="${project.id}" onclick="viewProject(${project.id}, '${safeName}')">
               <div class="project-header">
                 <div class="project-icon">${icon}</div>
                 <span class="project-badge ${project.active_count > 0 ? 'active' : ''}">${project.active_count || 0} active</span>
               </div>
               <div class="project-name">${escapeHtml(project.name)}</div>
               ${project.description ? `<div class="project-description">${escapeHtml(project.description)}</div>` : ''}
-              <div class="project-url"><a href="${escapeHtml(project.base_url)}" target="_blank">${escapeHtml(project.base_url)}</a></div>
+              <div class="project-url"><a href="${escapeHtml(project.base_url)}" target="_blank" onclick="event.stopPropagation()">${escapeHtml(project.base_url)}</a></div>
               <div class="project-stats">
                 <div class="stat">
                   <span class="stat-icon">&#128196;</span>
@@ -344,6 +407,7 @@
                   <span class="stat-label">updated</span>
                 </div>
               </div>
+              <div class="click-hint">Click to view test cases</div>
             </div>
           `;
         }).join('');
