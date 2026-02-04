@@ -1,0 +1,893 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Checkmate Test Runner</title>
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        background: #1a1a2e;
+        color: #eee;
+        padding: 16px;
+        min-height: 100vh;
+      }
+
+      .container {
+        max-width: 700px;
+        margin: 0 auto;
+      }
+
+      .header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 16px;
+        padding-bottom: 12px;
+        border-bottom: 1px solid #333;
+      }
+
+      .test-info {
+        flex: 1;
+      }
+
+      .test-name {
+        font-size: 18px;
+        font-weight: 600;
+        color: #fff;
+        margin-bottom: 4px;
+      }
+
+      .test-query {
+        font-size: 13px;
+        color: #888;
+        font-style: italic;
+      }
+
+      .progress-badge {
+        background: #2d2d44;
+        padding: 6px 14px;
+        border-radius: 16px;
+        font-size: 14px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .progress-badge.running {
+        background: #1e3a5f;
+        color: #60a5fa;
+      }
+
+      .progress-badge.passed {
+        background: #14532d;
+        color: #4ade80;
+      }
+
+      .progress-badge.failed {
+        background: #7f1d1d;
+        color: #f87171;
+      }
+
+      .steps-list {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 16px;
+      }
+
+      .step {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        padding: 12px;
+        background: #2d2d44;
+        border-radius: 8px;
+        border: 1px solid transparent;
+      }
+
+      .step.pending {
+        opacity: 0.5;
+      }
+
+      .step.running {
+        background: #1e3a5f;
+        border-color: #3b82f6;
+        opacity: 1;
+      }
+
+      .step.passed {
+        background: #14532d;
+        border-color: #22c55e;
+        opacity: 1;
+      }
+
+      .step.failed {
+        background: #7f1d1d;
+        border-color: #ef4444;
+        opacity: 1;
+      }
+
+      .step.skipped {
+        opacity: 0.4;
+      }
+
+      .step-icon {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        font-size: 12px;
+        font-weight: 600;
+      }
+
+      .step.pending .step-icon {
+        background: #444;
+        color: #888;
+      }
+
+      .step.running .step-icon {
+        background: #3b82f6;
+        color: #fff;
+        animation: pulse 1s ease-in-out infinite;
+      }
+
+      .step.passed .step-icon {
+        background: #22c55e;
+        color: #fff;
+      }
+
+      .step.failed .step-icon {
+        background: #ef4444;
+        color: #fff;
+      }
+
+      @keyframes pulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.15); }
+      }
+
+      .step-content {
+        flex: 1;
+        min-width: 0;
+      }
+
+      .step-header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 4px;
+      }
+
+      .step-action {
+        font-weight: 600;
+        font-size: 14px;
+        text-transform: capitalize;
+      }
+
+      .step-fixture {
+        font-size: 11px;
+        background: rgba(102, 126, 234, 0.2);
+        color: #667eea;
+        padding: 2px 8px;
+        border-radius: 8px;
+      }
+
+      .step-retry-badge {
+        font-size: 10px;
+        background: rgba(251, 191, 36, 0.2);
+        color: #fbbf24;
+        padding: 2px 6px;
+        border-radius: 6px;
+        font-weight: 500;
+      }
+
+      .step-duration {
+        font-size: 11px;
+        color: #888;
+        margin-left: auto;
+      }
+
+      .step-details {
+        font-size: 12px;
+        color: #aaa;
+        word-break: break-all;
+      }
+
+      .step-details code {
+        background: rgba(0, 0, 0, 0.3);
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-family: "SF Mono", Monaco, monospace;
+        font-size: 11px;
+      }
+
+      .step-error {
+        margin-top: 8px;
+        padding: 8px 10px;
+        background: rgba(239, 68, 68, 0.15);
+        border-radius: 6px;
+        font-size: 12px;
+        color: #f87171;
+        font-family: "SF Mono", Monaco, monospace;
+      }
+
+      .step-screenshot {
+        margin-top: 10px;
+        border-radius: 8px;
+        overflow: hidden;
+        border: 1px solid #444;
+      }
+
+      .step-screenshot img {
+        width: 100%;
+        display: block;
+      }
+
+      .step-screenshot-label {
+        font-size: 11px;
+        color: #888;
+        padding: 6px 10px;
+        background: #222;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .summary {
+        background: #2d2d44;
+        border-radius: 12px;
+        padding: 16px;
+        margin-top: 16px;
+      }
+
+      .summary.passed {
+        background: linear-gradient(135deg, #14532d 0%, #166534 100%);
+      }
+
+      .summary.failed {
+        background: linear-gradient(135deg, #7f1d1d 0%, #991b1b 100%);
+      }
+
+      .summary-header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 12px;
+      }
+
+      .summary-icon {
+        font-size: 24px;
+      }
+
+      .summary-title {
+        font-size: 16px;
+        font-weight: 600;
+      }
+
+      .summary-stats {
+        display: flex;
+        gap: 24px;
+      }
+
+      .summary-stat {
+        text-align: center;
+      }
+
+      .summary-stat-value {
+        font-size: 24px;
+        font-weight: 700;
+      }
+
+      .summary-stat-label {
+        font-size: 12px;
+        color: rgba(255, 255, 255, 0.7);
+      }
+
+      .loading {
+        text-align: center;
+        padding: 40px;
+        color: #888;
+      }
+
+      .spinner {
+        width: 40px;
+        height: 40px;
+        border: 3px solid #333;
+        border-top-color: #3b82f6;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin: 0 auto 16px;
+      }
+
+      @keyframes spin {
+        to { transform: rotate(360deg); }
+      }
+
+      .status-bar {
+        background: #222;
+        padding: 10px 14px;
+        border-radius: 8px;
+        font-size: 13px;
+        color: #888;
+        margin-bottom: 16px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .status-bar.running {
+        background: #1e3a5f;
+        color: #60a5fa;
+      }
+
+      .status-bar.error {
+        background: #7f1d1d;
+        color: #f87171;
+      }
+
+      .status-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: currentColor;
+      }
+
+      .status-bar.running .status-dot {
+        animation: blink 1s ease-in-out infinite;
+      }
+
+      @keyframes blink {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.3; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div id="loading" class="loading">
+        <div class="spinner"></div>
+        <p>Waiting for test execution...</p>
+      </div>
+
+      <div id="runner" style="display: none;">
+        <div class="header">
+          <div class="test-info">
+            <div class="test-name" id="testName">Test</div>
+            <div class="test-query" id="testQuery"></div>
+          </div>
+          <div class="progress-badge" id="progressBadge">
+            <span id="progressText">0/0</span>
+          </div>
+        </div>
+
+        <div class="status-bar" id="statusBar">
+          <div class="status-dot"></div>
+          <span id="statusText">Initializing...</span>
+        </div>
+
+        <div class="steps-list" id="stepsList"></div>
+
+        <div id="summary" class="summary" style="display: none;">
+          <div class="summary-header">
+            <span class="summary-icon" id="summaryIcon"></span>
+            <span class="summary-title" id="summaryTitle">Test Complete</span>
+          </div>
+          <div class="summary-stats">
+            <div class="summary-stat">
+              <div class="summary-stat-value" id="passedCount">0</div>
+              <div class="summary-stat-label">Passed</div>
+            </div>
+            <div class="summary-stat">
+              <div class="summary-stat-value" id="failedCount">0</div>
+              <div class="summary-stat-label">Failed</div>
+            </div>
+            <div class="summary-stat">
+              <div class="summary-stat-value" id="totalDuration">0s</div>
+              <div class="summary-stat-label">Duration</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // State
+      let steps = [];
+      let currentStepIndex = -1;
+      let isRunning = false;
+      let testInfo = null;
+      let startTime = null;
+
+      // MCP App Communication
+      let nextRequestId = 1;
+      const pendingRequests = new Map();
+
+      function sendRequest(method, params) {
+        const id = nextRequestId++;
+        return new Promise((resolve, reject) => {
+          pendingRequests.set(id, { resolve, reject });
+          window.parent.postMessage({ jsonrpc: '2.0', id, method, params: params || {} }, '*');
+        });
+      }
+
+      function sendNotification(method, params) {
+        window.parent.postMessage({ jsonrpc: '2.0', method, params: params || {} }, '*');
+      }
+
+      window.addEventListener('message', (event) => {
+        const message = event.data;
+        if (!message || message.jsonrpc !== '2.0') return;
+
+        if (message.id !== undefined && (message.result !== undefined || message.error)) {
+          const pending = pendingRequests.get(message.id);
+          if (pending) {
+            pendingRequests.delete(message.id);
+            message.error ? pending.reject(new Error(message.error.message)) : pending.resolve(message.result);
+          }
+          return;
+        }
+
+        if (message.method) handleNotification(message.method, message.params);
+      });
+
+      function handleNotification(method, params) {
+        console.log('Notification:', method, params);
+
+        if (method === 'ui/notifications/tool-result' && params?.structuredContent) {
+          processToolResult(params.structuredContent);
+        }
+      }
+
+      function processToolResult(data) {
+        console.log('Processing tool result:', data);
+
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('runner').style.display = 'block';
+
+        // Handle error
+        if (data.error) {
+          updateStatus('Error: ' + data.error, false, true);
+          return;
+        }
+
+        // Set test info
+        if (data.testCase) {
+          testInfo = data.testCase;
+          document.getElementById('testName').textContent = testInfo.name || 'Test';
+          if (testInfo.description) {
+            document.getElementById('testQuery').textContent = testInfo.description;
+          }
+        }
+        if (data.query) {
+          document.getElementById('testName').textContent = 'Natural Language Test';
+          document.getElementById('testQuery').textContent = data.query;
+        }
+
+        // Animate through collected events
+        if (data.events) {
+          animateEvents(data.events, data);
+        }
+      }
+
+      // Connect directly to Checkmate's SSE endpoint for real-time updates
+      async function connectToSSE(data) {
+        isRunning = true;
+        startTime = Date.now();
+        steps = [];
+        currentStepIndex = -1;
+
+        updateStatus('Connecting to test executor...', true);
+
+        try {
+          const { sseEndpoint, sseMethod, sseBody, browser } = data;
+
+          let response;
+          if (sseMethod === 'POST' && sseBody) {
+            // POST request with body (for natural language tests)
+            response = await fetch(sseEndpoint, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'text/event-stream',
+              },
+              body: JSON.stringify(sseBody),
+            });
+          } else {
+            // POST request for run_test (test case execution)
+            const body = { browser: browser || 'chromium-headless' };
+            response = await fetch(sseEndpoint, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'text/event-stream',
+              },
+              body: JSON.stringify(body),
+            });
+          }
+
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+          }
+
+          updateStatus('Running test...', true);
+
+          // Process SSE stream
+          const reader = response.body.getReader();
+          const decoder = new TextDecoder();
+          let buffer = '';
+
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            buffer += decoder.decode(value, { stream: true });
+
+            // Process complete lines
+            const lines = buffer.split('\n');
+            buffer = lines.pop() || ''; // Keep incomplete line in buffer
+
+            for (const line of lines) {
+              if (line.startsWith('data: ')) {
+                const jsonStr = line.slice(6).trim();
+                if (jsonStr) {
+                  try {
+                    const event = JSON.parse(jsonStr);
+                    await processEvent(event);
+                  } catch (e) {
+                    console.error('Failed to parse SSE event:', e, jsonStr);
+                  }
+                }
+              }
+            }
+          }
+
+          // Show summary when complete
+          isRunning = false;
+          showSummary(data);
+
+        } catch (error) {
+          console.error('SSE connection error:', error);
+          isRunning = false;
+          updateStatus('Connection error: ' + error.message, false, true);
+        }
+      }
+
+      async function animateEvents(events, data) {
+        console.log('Raw events:', events);
+        isRunning = true;
+        startTime = Date.now();
+        steps = [];
+        currentStepIndex = -1;
+
+        // Process events - dynamically add steps as we see them
+        for (const event of events) {
+          if (event.type === 'step_started') {
+            const idx = event.step_number - 1;
+            // Ensure steps array is large enough
+            while (steps.length <= idx) {
+              steps.push({ status: 'pending', action: '...', stepNumber: steps.length + 1 });
+            }
+            steps[idx] = {
+              ...steps[idx],
+              action: event.action,
+              description: event.description,
+              target: event.target,
+              value: event.value,
+              fixtureName: event.fixture_name,
+            };
+          } else if (event.type === 'step_completed') {
+            const idx = event.step_number - 1;
+            // Ensure steps array is large enough
+            while (steps.length <= idx) {
+              steps.push({ status: 'pending', action: '...', stepNumber: steps.length + 1 });
+            }
+            steps[idx] = {
+              ...steps[idx],
+              status: event.status,
+              duration: event.duration || 0,
+              error: event.error,
+              screenshot: event.screenshot,
+              action: event.action || steps[idx].action,
+              target: event.target,
+              value: event.value,
+            };
+          }
+        }
+
+        console.log('Final steps:', steps);
+
+        // Render final state
+        renderSteps();
+        updateProgress();
+
+        // Show summary
+        isRunning = false;
+        showSummary(data);
+      }
+
+      // Consolidate retry events: if a step failed then passed on retry, show only the final pass with "retried" flag
+      function consolidateRetryEvents(events) {
+        const stepResults = new Map(); // step_number -> array of step_completed events
+        const consolidated = [];
+
+        // First pass: collect all step_completed events per step
+        for (const event of events) {
+          if (event.type === 'step_completed') {
+            const stepNum = event.step_number;
+            if (!stepResults.has(stepNum)) {
+              stepResults.set(stepNum, []);
+            }
+            stepResults.get(stepNum).push(event);
+          }
+        }
+
+        // Second pass: build consolidated event list
+        const emittedSteps = new Set();
+        for (const event of events) {
+          if (event.type === 'step_started') {
+            // Only emit the first step_started for each step
+            if (!emittedSteps.has(event.step_number)) {
+              consolidated.push(event);
+            }
+          } else if (event.type === 'step_completed') {
+            const stepNum = event.step_number;
+            if (!emittedSteps.has(stepNum)) {
+              emittedSteps.add(stepNum);
+              const allResults = stepResults.get(stepNum) || [event];
+              const finalResult = allResults[allResults.length - 1];
+
+              // Check if there were retries (multiple results or retry_attempt > 1)
+              const hadRetries = allResults.length > 1 || (event.retry_attempt && event.retry_attempt > 1);
+
+              consolidated.push({
+                ...finalResult,
+                retried: hadRetries,
+                retryCount: allResults.length > 1 ? allResults.length : (event.retry_attempt || 1),
+              });
+            }
+          } else {
+            // Pass through other events (run_started, run_completed, etc.)
+            consolidated.push(event);
+          }
+        }
+
+        return consolidated;
+      }
+
+      function processEvent(event) {
+        console.log('SSE Event:', event.type, event);
+
+        switch (event.type) {
+          case 'run_started':
+            updateStatus('Running test...', true);
+            break;
+
+          case 'step_started':
+            currentStepIndex = event.step_number - 1;
+            if (steps[currentStepIndex]) {
+              steps[currentStepIndex] = {
+                ...steps[currentStepIndex],
+                action: event.action,
+                description: event.description,
+                target: event.target,
+                value: event.value,
+                fixtureName: event.fixture_name,
+              };
+              renderSteps();
+            }
+            break;
+
+          case 'step_completed':
+            const idx = event.step_number - 1;
+            if (steps[idx]) {
+              steps[idx] = {
+                ...steps[idx],
+                status: event.status,
+                duration: event.duration,
+                error: event.error,
+                screenshot: event.screenshot,
+                target: event.target,
+                value: event.value,
+                retried: event.retried,
+                retryCount: event.retryCount,
+              };
+              renderSteps();
+            }
+            break;
+
+          case 'run_completed':
+            updateStatus(event.summary || 'Test completed', false);
+            break;
+
+          case 'error':
+            updateStatus('Error: ' + event.message, false, true);
+            break;
+
+          case 'warning':
+            console.warn('Warning:', event.message);
+            break;
+        }
+      }
+
+      function renderSteps() {
+        const list = document.getElementById('stepsList');
+        list.innerHTML = steps.map((step, index) => {
+          const icon = getStepIcon(step.status, index + 1);
+          const details = formatStepDetails(step);
+          const durationStr = step.duration ? `${step.duration}ms` : '';
+
+          let extraHtml = '';
+          if (step.error) {
+            extraHtml += `<div class="step-error">${escapeHtml(step.error)}</div>`;
+          }
+          if (step.screenshot) {
+            // Add data URL prefix if not present
+            const imgSrc = step.screenshot.startsWith('data:')
+              ? step.screenshot
+              : `data:image/png;base64,${step.screenshot}`;
+            extraHtml += `
+              <div class="step-screenshot">
+                <div class="step-screenshot-label">&#128247; Screenshot</div>
+                <img src="${imgSrc}" alt="Screenshot" />
+              </div>
+            `;
+          }
+
+          const retryBadge = step.retried ? `<span class="step-retry-badge">retried</span>` : '';
+
+          return `
+            <div class="step ${step.status}">
+              <div class="step-icon">${icon}</div>
+              <div class="step-content">
+                <div class="step-header">
+                  <span class="step-action">${(step.action || '...').replace(/_/g, ' ')}</span>
+                  ${step.fixtureName ? `<span class="step-fixture">${escapeHtml(step.fixtureName)}</span>` : ''}
+                  ${retryBadge}
+                  ${durationStr ? `<span class="step-duration">${durationStr}</span>` : ''}
+                </div>
+                <div class="step-details">${details}</div>
+                ${extraHtml}
+              </div>
+            </div>
+          `;
+        }).join('');
+
+        // Scroll to current step
+        if (currentStepIndex >= 0) {
+          const stepEl = list.children[currentStepIndex];
+          if (stepEl) {
+            stepEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          }
+        }
+      }
+
+      function getStepIcon(status, number) {
+        switch (status) {
+          case 'passed': return '&#10003;';
+          case 'failed': return '&#10007;';
+          case 'running': return '&#9654;';
+          case 'skipped': return '&#8212;';
+          default: return number;
+        }
+      }
+
+      function formatStepDetails(step) {
+        const parts = [];
+        if (step.target) parts.push(`<code>${escapeHtml(step.target)}</code>`);
+        if (step.value) parts.push(`&rarr; <code>${escapeHtml(step.value)}</code>`);
+        if (step.description && !step.target && !step.value) {
+          parts.push(escapeHtml(step.description));
+        }
+        return parts.join(' ') || '<em>No parameters</em>';
+      }
+
+      function updateProgress() {
+        const passed = steps.filter(s => s.status === 'passed').length;
+        const failed = steps.filter(s => s.status === 'failed').length;
+        const completed = passed + failed;
+        const total = steps.length;
+
+        const badge = document.getElementById('progressBadge');
+        document.getElementById('progressText').textContent = `${completed}/${total}`;
+
+        badge.className = 'progress-badge';
+        if (isRunning) {
+          badge.classList.add('running');
+        } else if (failed > 0) {
+          badge.classList.add('failed');
+        } else if (completed === total && total > 0) {
+          badge.classList.add('passed');
+        }
+      }
+
+      function updateStatus(message, running, isError = false) {
+        const bar = document.getElementById('statusBar');
+        document.getElementById('statusText').textContent = message;
+        bar.className = 'status-bar';
+        if (isError) {
+          bar.classList.add('error');
+        } else if (running) {
+          bar.classList.add('running');
+        }
+      }
+
+      function showSummary(data) {
+        const passed = steps.filter(s => s.status === 'passed').length;
+        const failed = steps.filter(s => s.status === 'failed').length;
+        const skipped = steps.filter(s => s.status === 'skipped' || s.status === 'pending').length;
+
+        // Use status from run_completed event (authoritative), fallback to step counting
+        const testFailed = data.status === 'failed' || data.status === 'error' || failed > 0 || skipped > 0;
+
+        // Calculate actual execution duration from step durations (in ms)
+        const totalDurationMs = steps.reduce((sum, s) => sum + (s.duration || 0), 0);
+        const durationStr = totalDurationMs >= 1000
+          ? (totalDurationMs / 1000).toFixed(1) + 's'
+          : totalDurationMs + 'ms';
+
+        const summary = document.getElementById('summary');
+        summary.style.display = 'block';
+        summary.className = 'summary ' + (testFailed ? 'failed' : 'passed');
+
+        document.getElementById('summaryIcon').innerHTML = testFailed ? '&#10007;' : '&#10003;';
+        document.getElementById('summaryTitle').textContent = testFailed ? 'Test Failed' : 'Test Passed';
+        document.getElementById('passedCount').textContent = passed;
+        document.getElementById('failedCount').textContent = failed + skipped;
+        document.getElementById('totalDuration').textContent = durationStr;
+      }
+
+      function escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+      }
+
+      function sleep(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
+      }
+
+      // Initialize
+      async function initialize() {
+        try {
+          await sendRequest('ui/initialize', {
+            protocolVersion: '2025-06-18',
+            capabilities: {},
+            clientInfo: { name: 'checkmate-test-runner', version: '1.0.0' }
+          });
+          sendNotification('ui/notifications/initialized', {});
+        } catch (error) {
+          console.error('Init failed:', error);
+          // Demo mode - show example with SSE simulation
+          processToolResult({
+            testCase: { id: 1, name: 'Demo Test', description: 'Example test execution' },
+            events: [
+              { type: 'run_started', run_id: 1, total_steps: 3 },
+              { type: 'step_started', step_number: 1, action: 'navigate', target: null, value: 'https://example.com' },
+              { type: 'step_completed', step_number: 1, action: 'navigate', status: 'passed', duration: 250 },
+              { type: 'step_started', step_number: 2, action: 'click', target: '#login-btn' },
+              { type: 'step_completed', step_number: 2, action: 'click', status: 'passed', duration: 100 },
+              { type: 'step_started', step_number: 3, action: 'assert', target: '.welcome' },
+              { type: 'step_completed', step_number: 3, action: 'assert', status: 'passed', duration: 50 },
+              { type: 'run_completed', run_id: 1, status: 'passed', pass_count: 3, error_count: 0, summary: '3 steps passed' }
+            ],
+            status: 'passed'
+          });
+        }
+      }
+
+      initialize();
+    </script>
+  </body>
+</html>
