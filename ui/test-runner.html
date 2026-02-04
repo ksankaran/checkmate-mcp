@@ -413,6 +413,20 @@
       let nextRequestId = 1;
       const pendingRequests = new Map();
 
+      // Trusted origin patterns for VS Code MCP Apps
+      const TRUSTED_ORIGIN_PATTERNS = [
+        /^vscode-webview:\/\//,           // VS Code desktop webviews
+        /\.vscode-cdn\.net$/,             // VS Code CDN
+        /\.vscode\.dev$/,                 // VS Code web
+        /\.github\.dev$/,                 // GitHub Codespaces
+      ];
+
+      function isTrustedOrigin(origin) {
+        // Allow null origin (sandboxed iframes)
+        if (origin === 'null' || !origin) return true;
+        return TRUSTED_ORIGIN_PATTERNS.some(pattern => pattern.test(origin));
+      }
+
       function sendRequest(method, params) {
         const id = nextRequestId++;
         return new Promise((resolve, reject) => {
@@ -426,6 +440,12 @@
       }
 
       window.addEventListener('message', (event) => {
+        // Validate origin
+        if (!isTrustedOrigin(event.origin)) {
+          console.warn('Ignoring message from untrusted origin:', event.origin);
+          return;
+        }
+
         const message = event.data;
         if (!message || message.jsonrpc !== '2.0') return;
 

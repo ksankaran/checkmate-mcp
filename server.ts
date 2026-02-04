@@ -341,6 +341,7 @@ server.registerTool(
 // =============================================================================
 
 const expressApp = express();
+expressApp.disable("x-powered-by");
 expressApp.use(express.json());
 
 // Health check endpoint
