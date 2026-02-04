@@ -46,6 +46,7 @@ function loadUI(filename: string): string {
 }
 
 const PROJECTS_UI = loadUI("projects.html");
+const TEST_CASES_UI = loadUI("test-cases.html");
 const TEST_RUNNER_UI = loadUI("test-runner.html");
 
 // =============================================================================
@@ -62,6 +63,7 @@ const server = new McpServer({
 // =============================================================================
 
 const PROJECTS_UI_URI = "ui://checkmate-mcp/projects";
+const TEST_CASES_UI_URI = "ui://checkmate-mcp/test-cases";
 const TEST_RUNNER_UI_URI = "ui://checkmate-mcp/test-runner";
 
 server.resource("projects-ui", PROJECTS_UI_URI, {
@@ -74,6 +76,21 @@ server.resource("projects-ui", PROJECTS_UI_URI, {
       uri: uri.href,
       mimeType: "text/html;profile=mcp-app",
       text: PROJECTS_UI,
+      _meta: { ui: { csp: {}, prefersBorder: false } },
+    }],
+  };
+});
+
+server.resource("test-cases-ui", TEST_CASES_UI_URI, {
+  description: "Test cases listing UI with run actions",
+  mimeType: "text/html;profile=mcp-app",
+}, async (uri) => {
+  console.log(`[Resource] Serving test-cases UI: ${uri.href}`);
+  return {
+    contents: [{
+      uri: uri.href,
+      mimeType: "text/html;profile=mcp-app",
+      text: TEST_CASES_UI,
       _meta: { ui: { csp: {}, prefersBorder: false } },
     }],
   };
@@ -159,9 +176,15 @@ server.registerTool(
 server.registerTool(
   "list_test_cases",
   {
-    description: "List all test cases in a Checkmate project.",
+    description: "List all test cases in a Checkmate project. Shows test names, status, priority, and allows running tests directly.",
     inputSchema: {
       project_id: z.number().describe("The project ID to list test cases for"),
+    },
+    _meta: {
+      ui: {
+        resourceUri: TEST_CASES_UI_URI,
+        visibility: ["model", "app"],
+      },
     },
   },
   async ({ project_id }) => {
@@ -184,11 +207,27 @@ server.registerTool(
           type: "text" as const,
           text: `Test cases in "${project.name}":\n${textSummary}`,
         }],
+        structuredContent: {
+          project: {
+            id: project.id,
+            name: project.name,
+          },
+          testCases: testCases.map((tc) => ({
+            id: tc.id,
+            name: tc.name,
+            description: tc.description,
+            status: tc.status,
+            priority: tc.priority,
+            steps_count: tc.steps?.length || 0,
+            updated_at: tc.updated_at,
+          })),
+        },
       };
     } catch (error) {
       const message = error instanceof Error ? error.message : "Unknown error";
       return {
         content: [{ type: "text" as const, text: `Error: ${message}` }],
+        structuredContent: { error: message, testCases: [] },
       };
     }
   }
