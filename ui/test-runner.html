@@ -827,8 +827,8 @@
         const failed = steps.filter(s => s.status === 'failed').length;
         const skipped = steps.filter(s => s.status === 'skipped' || s.status === 'pending').length;
 
-        // Use status from run_completed event (authoritative), fallback to step counting
-        const testFailed = data.status === 'failed' || data.status === 'error' || failed > 0 || skipped > 0;
+        // Trust step outcomes over data.status - intelligent retry may pass even if initial run reported failure
+        const testFailed = failed > 0 || skipped > 0;
 
         // Calculate actual execution duration from step durations (in ms)
         const totalDurationMs = steps.reduce((sum, s) => sum + (s.duration || 0), 0);
