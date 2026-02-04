@@ -8,7 +8,12 @@
   },
   "scripts": {
     "dev": "tsx server.ts",
-    "build": "tsc",
+    "build": "npm run build:ui && tsc",
+    "build:ui": "npm run build:ui:projects && npm run build:ui:test-cases && npm run build:ui:test-runner && npm run build:ui:cleanup",
+    "build:ui:projects": "INPUT=ui-src/projects.html vite build && mv ui/ui-src/projects.html ui/projects.html",
+    "build:ui:test-cases": "INPUT=ui-src/test-cases.html vite build && mv ui/ui-src/test-cases.html ui/test-cases.html",
+    "build:ui:test-runner": "INPUT=ui-src/test-runner.html vite build && mv ui/ui-src/test-runner.html ui/test-runner.html",
+    "build:ui:cleanup": "rm -rf ui/ui-src",
     "start": "node dist/server.js"
   },
   "dependencies": {
@@ -24,6 +29,8 @@
     "@types/express": "^5.0.6",
     "@types/node": "^22.0.0",
     "tsx": "^4.19.0",
-    "typescript": "^5.7.0"
+    "typescript": "^5.7.0",
+    "vite": "^7.3.1",
+    "vite-plugin-singlefile": "^2.3.0"
   }
 }

@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="light dark" />
+    <title>Checkmate Test Runner</title>
+    <link rel="stylesheet" href="./test-runner.css" />
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <div class="logo">&#9889;</div>
+        <div class="header-content">
+          <div class="title" id="testName">Running Test...</div>
+          <div class="subtitle" id="testDescription"></div>
+        </div>
+      </div>
+
+      <div id="loading" class="loading">
+        <div class="spinner"></div>
+        <p>Executing test...</p>
+      </div>
+
+      <div id="steps" class="steps-list" style="display: none;"></div>
+
+      <div id="summary" class="summary" style="display: none;">
+        <div class="summary-header">
+          <span class="summary-icon" id="summaryIcon"></span>
+          <span class="summary-title" id="summaryTitle">Test Complete</span>
+        </div>
+        <div class="summary-stats">
+          <div class="summary-stat">
+            <div class="summary-stat-value" id="passedCount">0</div>
+            <div class="summary-stat-label">Passed</div>
+          </div>
+          <div class="summary-stat">
+            <div class="summary-stat-value" id="failedCount">0</div>
+            <div class="summary-stat-label">Failed</div>
+          </div>
+          <div class="summary-stat">
+            <div class="summary-stat-value" id="totalDuration">0s</div>
+            <div class="summary-stat-label">Duration</div>
+          </div>
+        </div>
+      </div>
+
+      <div id="error" class="error" style="display: none;"></div>
+    </div>
+    <script type="module" src="./test-runner.ts"></script>
+  </body>
+</html>

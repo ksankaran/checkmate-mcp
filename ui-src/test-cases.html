@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="light dark" />
+    <title>Checkmate Test Cases</title>
+    <link rel="stylesheet" href="./test-cases.css" />
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <div class="logo">&#128196;</div>
+        <span class="title">Test Cases</span>
+        <span class="subtitle" id="count"></span>
+      </div>
+
+      <div class="project-name" id="projectName"></div>
+
+      <div id="loading" class="loading">
+        <div class="spinner"></div>
+        <p>Loading test cases...</p>
+      </div>
+
+      <div id="testCases" class="test-cases-grid" style="display: none;"></div>
+
+      <div id="error" class="error" style="display: none;"></div>
+
+      <div id="toast" class="toast"></div>
+    </div>
+    <script type="module" src="./test-cases.ts"></script>
+  </body>
+</html>

@@ -1,0 +1,239 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background: var(--vscode-editor-background, #1e1e1e);
+  color: var(--vscode-editor-foreground, #d4d4d4);
+  padding: 16px;
+  min-height: 100vh;
+}
+
+.container {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--vscode-panel-border, #404040);
+}
+
+.logo {
+  font-size: 28px;
+}
+
+.header-content {
+  flex: 1;
+}
+
+.title {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.subtitle {
+  font-size: 13px;
+  color: var(--vscode-descriptionForeground, #888);
+}
+
+.loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  color: var(--vscode-descriptionForeground, #888);
+}
+
+.spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--vscode-panel-border, #404040);
+  border-top-color: var(--vscode-textLink-foreground, #3794ff);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 16px;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.steps-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.step {
+  background: var(--vscode-editor-background, #252526);
+  border: 1px solid var(--vscode-panel-border, #404040);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.step-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+}
+
+.step-number {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--vscode-badge-background, #4d4d4d);
+  color: var(--vscode-badge-foreground, #fff);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.step.passed .step-number {
+  background: #2e7d32;
+}
+
+.step.failed .step-number {
+  background: #c62828;
+}
+
+.step.skipped .step-number {
+  background: #757575;
+}
+
+.step-content {
+  flex: 1;
+}
+
+.step-action {
+  font-weight: 600;
+  font-size: 14px;
+  margin-bottom: 2px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.step-target {
+  font-size: 12px;
+  color: var(--vscode-descriptionForeground, #888);
+  font-family: monospace;
+}
+
+.step-badges {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.badge {
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 500;
+  text-transform: uppercase;
+}
+
+.badge-retried {
+  background: #f57c00;
+  color: #fff;
+}
+
+.step-duration {
+  font-size: 11px;
+  color: var(--vscode-descriptionForeground, #666);
+  flex-shrink: 0;
+}
+
+.step-error {
+  background: var(--vscode-inputValidation-errorBackground, #5a1d1d);
+  padding: 12px 16px;
+  font-size: 13px;
+  color: var(--vscode-errorForeground, #f48771);
+  border-top: 1px solid var(--vscode-inputValidation-errorBorder, #be1100);
+}
+
+.step-screenshot {
+  padding: 12px 16px;
+  border-top: 1px solid var(--vscode-panel-border, #404040);
+  background: var(--vscode-editor-background, #1a1a1a);
+}
+
+.step-screenshot img {
+  max-width: 100%;
+  border-radius: 4px;
+  border: 1px solid var(--vscode-panel-border, #404040);
+}
+
+.summary {
+  background: var(--vscode-editor-background, #252526);
+  border: 1px solid var(--vscode-panel-border, #404040);
+  border-radius: 8px;
+  padding: 20px;
+  margin-top: 20px;
+}
+
+.summary.passed {
+  border-color: #2e7d32;
+}
+
+.summary.failed {
+  border-color: #c62828;
+}
+
+.summary-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.summary-icon {
+  font-size: 32px;
+}
+
+.summary-title {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.summary-stats {
+  display: flex;
+  gap: 32px;
+}
+
+.summary-stat {
+  text-align: center;
+}
+
+.summary-stat-value {
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.summary-stat-label {
+  font-size: 12px;
+  color: var(--vscode-descriptionForeground, #888);
+  text-transform: uppercase;
+}
+
+.error {
+  background: var(--vscode-inputValidation-errorBackground, #5a1d1d);
+  border: 1px solid var(--vscode-inputValidation-errorBorder, #be1100);
+  border-radius: 4px;
+  padding: 12px 16px;
+  color: var(--vscode-errorForeground, #f48771);
+}

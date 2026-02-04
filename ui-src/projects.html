@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="light dark" />
+    <title>Checkmate Projects</title>
+    <link rel="stylesheet" href="./projects.css" />
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <div class="logo">&#128640;</div>
+        <span class="title">Checkmate Projects</span>
+        <span class="subtitle" id="count"></span>
+      </div>
+
+      <div id="loading" class="loading">
+        <div class="spinner"></div>
+        <p>Loading projects...</p>
+      </div>
+
+      <div id="projects" class="projects-grid" style="display: none;"></div>
+
+      <div id="error" class="error" style="display: none;"></div>
+
+      <div id="toast" class="toast"></div>
+    </div>
+    <script type="module" src="./projects.ts"></script>
+  </body>
+</html>
