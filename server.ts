@@ -442,10 +442,34 @@ expressApp.get("/health", async (_req, res) => {
 // SSE Proxy Endpoints (to avoid CORS issues with MCP App iframe)
 // =============================================================================
 
+// Validation schemas for proxy endpoints
+const browserSchema = z.enum(["chromium", "chromium-headless", "firefox", "firefox-headless", "webkit", "webkit-headless"]).optional();
+
+const testCaseRunSchema = z.object({
+  browser: browserSchema,
+});
+
+const executeStepsSchema = z.object({
+  project_id: z.number().int().positive(),
+  steps: z.array(z.string()).min(1),
+  browser: browserSchema,
+  fixture_ids: z.array(z.number().int().positive()).optional(),
+});
+
 // Proxy for test case execution SSE
 expressApp.post("/proxy/test-cases/:testCaseId/runs/stream", async (req, res) => {
-  const { testCaseId } = req.params;
-  const { browser } = req.body;
+  const testCaseId = parseInt(req.params.testCaseId, 10);
+  if (isNaN(testCaseId) || testCaseId <= 0) {
+    res.status(400).json({ error: "Invalid testCaseId: must be a positive integer" });
+    return;
+  }
+
+  const bodyResult = testCaseRunSchema.safeParse(req.body);
+  if (!bodyResult.success) {
+    res.status(400).json({ error: "Invalid request body", details: bodyResult.error.issues });
+    return;
+  }
+  const { browser } = bodyResult.data;
 
   apiLogger.info({ endpoint: "proxy/test-cases/stream", testCaseId, browser }, "SSE proxy request");
 
@@ -499,9 +523,14 @@ expressApp.post("/proxy/test-cases/:testCaseId/runs/stream", async (req, res) =>
 
 // Proxy for execute steps SSE (natural language tests)
 expressApp.post("/proxy/test-runs/execute/stream", async (req, res) => {
-  const { project_id, steps, browser, fixture_ids } = req.body;
+  const bodyResult = executeStepsSchema.safeParse(req.body);
+  if (!bodyResult.success) {
+    res.status(400).json({ error: "Invalid request body", details: bodyResult.error.issues });
+    return;
+  }
+  const { project_id, steps, browser, fixture_ids } = bodyResult.data;
 
-  apiLogger.info({ endpoint: "proxy/test-runs/stream", projectId: project_id, stepCount: steps?.length }, "SSE proxy request");
+  apiLogger.info({ endpoint: "proxy/test-runs/stream", projectId: project_id, stepCount: steps.length }, "SSE proxy request");
 
   try {
     const response = await fetch(`${CHECKMATE_URL}/api/test-runs/execute/stream`, {
