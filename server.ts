@@ -17,9 +17,10 @@ import express from "express";
 import { readFileSync } from "fs";
 import { z } from "zod";
 import { CheckmateClient } from "./src/checkmate-client.js";
+import { serverLogger, toolLogger, resourceLogger, apiLogger } from "./src/logger.js";
 import type { SSEEvent, TestStep } from "./src/types.js";
 
-console.log("Starting Checkmate MCP Server...");
+serverLogger.info("Starting Checkmate MCP Server...");
 
 // =============================================================================
 // Configuration
@@ -37,10 +38,10 @@ const client = new CheckmateClient(CHECKMATE_URL);
 function loadUI(filename: string): string {
   try {
     const html = readFileSync(`./ui/${filename}`, "utf-8");
-    console.log(`Loaded UI: ${filename}`);
+    serverLogger.debug({ filename }, "Loaded UI file");
     return html;
   } catch (e) {
-    console.error(`Failed to load UI ${filename}:`, e);
+    serverLogger.error({ filename, error: e }, "Failed to load UI file");
     return `<!DOCTYPE html><html><body><h1>UI not found: ${filename}</h1></body></html>`;
   }
 }
@@ -70,7 +71,7 @@ server.resource("projects-ui", PROJECTS_UI_URI, {
   description: "Projects listing UI",
   mimeType: "text/html;profile=mcp-app",
 }, async (uri) => {
-  console.log(`[Resource] Serving projects UI: ${uri.href}`);
+  resourceLogger.debug({ uri: uri.href }, "Serving projects UI");
   return {
     contents: [{
       uri: uri.href,
@@ -85,7 +86,7 @@ server.resource("test-cases-ui", TEST_CASES_UI_URI, {
   description: "Test cases listing UI with run actions",
   mimeType: "text/html;profile=mcp-app",
 }, async (uri) => {
-  console.log(`[Resource] Serving test-cases UI: ${uri.href}`);
+  resourceLogger.debug({ uri: uri.href }, "Serving test-cases UI");
   return {
     contents: [{
       uri: uri.href,
@@ -100,7 +101,7 @@ server.resource("test-runner-ui", TEST_RUNNER_UI_URI, {
   description: "Test execution UI with real-time progress",
   mimeType: "text/html;profile=mcp-app",
 }, async (uri) => {
-  console.log(`[Resource] Serving test-runner UI: ${uri.href}`);
+  resourceLogger.debug({ uri: uri.href }, "Serving test-runner UI");
   return {
     contents: [{
       uri: uri.href,
@@ -128,7 +129,8 @@ server.registerTool(
     },
   },
   async () => {
-    console.log("[Tool] list_projects called");
+    const startTime = Date.now();
+    toolLogger.info({ tool: "list_projects" }, "Tool called: list_projects");
 
     try {
       const projects = await client.listProjects();
@@ -155,12 +157,21 @@ server.registerTool(
             .map((p) => `- ${p.name} (${p.test_case_count} tests) - ${p.base_url}`)
             .join("\n");
 
+      toolLogger.info(
+        { tool: "list_projects", success: true, projectCount: enrichedProjects.length, durationMs: Date.now() - startTime },
+        "Tool completed: list_projects"
+      );
+
       return {
         content: [{ type: "text" as const, text: `Projects:\n${textSummary}` }],
         structuredContent: { projects: enrichedProjects },
       };
     } catch (error) {
       const message = error instanceof Error ? error.message : "Unknown error";
+      toolLogger.error(
+        { tool: "list_projects", success: false, error: message, durationMs: Date.now() - startTime },
+        "Tool failed: list_projects"
+      );
       return {
         content: [{ type: "text" as const, text: `Error listing projects: ${message}` }],
         structuredContent: { error: message, projects: [] },
@@ -188,7 +199,8 @@ server.registerTool(
     },
   },
   async ({ project_id }) => {
-    console.log(`[Tool] list_test_cases called for project ${project_id}`);
+    const startTime = Date.now();
+    toolLogger.info({ tool: "list_test_cases", projectId: project_id }, "Tool called: list_test_cases");
 
     try {
       const [project, testCases] = await Promise.all([
@@ -201,6 +213,11 @@ server.registerTool(
         : testCases
             .map((tc) => `- [${tc.id}] ${tc.name} (${tc.status}, ${tc.priority})`)
             .join("\n");
+
+      toolLogger.info(
+        { tool: "list_test_cases", success: true, projectId: project_id, testCaseCount: testCases.length, durationMs: Date.now() - startTime },
+        "Tool completed: list_test_cases"
+      );
 
       return {
         content: [{
@@ -225,6 +242,10 @@ server.registerTool(
       };
     } catch (error) {
       const message = error instanceof Error ? error.message : "Unknown error";
+      toolLogger.error(
+        { tool: "list_test_cases", success: false, projectId: project_id, error: message, durationMs: Date.now() - startTime },
+        "Tool failed: list_test_cases"
+      );
       return {
         content: [{ type: "text" as const, text: `Error: ${message}` }],
         structuredContent: { error: message, testCases: [] },
@@ -257,7 +278,8 @@ server.registerTool(
     },
   },
   async ({ test_case_id, browser }) => {
-    console.log(`[Tool] run_test called for test case ${test_case_id}`);
+    const startTime = Date.now();
+    toolLogger.info({ tool: "run_test", testCaseId: test_case_id, browser }, "Tool called: run_test");
 
     try {
       const testCase = await client.getTestCase(test_case_id);
@@ -269,13 +291,18 @@ server.registerTool(
         maxRetries: 2,
         retryMode: "intelligent",
       })) {
-        console.log(`[SSE] ${event.type}`);
+        toolLogger.debug({ tool: "run_test", testCaseId: test_case_id, eventType: event.type }, "SSE event received");
         events.push(event);
       }
 
       const completedEvent = events.find((e) => e.type === "run_completed");
       const status = completedEvent?.type === "run_completed" ? completedEvent.status : "unknown";
       const summary = completedEvent?.type === "run_completed" ? completedEvent.summary : "Test completed";
+
+      toolLogger.info(
+        { tool: "run_test", success: status === "passed", testCaseId: test_case_id, status, eventCount: events.length, durationMs: Date.now() - startTime },
+        "Tool completed: run_test"
+      );
 
       return {
         content: [{ type: "text" as const, text: `Test: ${testCase.name}\nStatus: ${status}\n${summary}` }],
@@ -292,6 +319,10 @@ server.registerTool(
       };
     } catch (error) {
       const message = error instanceof Error ? error.message : "Unknown error";
+      toolLogger.error(
+        { tool: "run_test", success: false, testCaseId: test_case_id, error: message, durationMs: Date.now() - startTime },
+        "Tool failed: run_test"
+      );
       return {
         content: [{ type: "text" as const, text: `Error: ${message}` }],
         structuredContent: { error: message, events: [] },
@@ -329,27 +360,36 @@ server.registerTool(
     },
   },
   async ({ project_id, query, fixture_ids, browser }) => {
-    console.log(`[Tool] run_natural_test called: "${query}" in project ${project_id}`);
+    const startTime = Date.now();
+    toolLogger.info({ tool: "run_natural_test", projectId: project_id, query, browser }, "Tool called: run_natural_test");
 
     try {
       // Build test steps from natural language
-      console.log("[Build] Generating test steps...");
+      toolLogger.debug({ tool: "run_natural_test", projectId: project_id }, "Generating test steps from query");
       const buildResult = await client.buildTest(project_id, query, fixture_ids);
       const steps: TestStep[] = buildResult.test_case.steps;
       // Use fixture_ids from build response (AI determines which fixtures are needed)
       const resolvedFixtureIds = buildResult.test_case.fixture_ids || fixture_ids || [];
-      console.log(`[Build] Generated ${steps.length} steps, fixtures: ${resolvedFixtureIds}`);
+      toolLogger.debug(
+        { tool: "run_natural_test", stepCount: steps.length, fixtureIds: resolvedFixtureIds },
+        "Test steps generated"
+      );
 
       // Execute and collect all SSE events (with retry defaults)
       const events: SSEEvent[] = [];
       for await (const event of client.executeSteps(project_id, steps, { browser, fixtureIds: resolvedFixtureIds })) {
-        console.log(`[SSE] ${event.type}`);
+        toolLogger.debug({ tool: "run_natural_test", eventType: event.type }, "SSE event received");
         events.push(event);
       }
 
       const completedEvent = events.find((e) => e.type === "run_completed");
       const status = completedEvent?.type === "run_completed" ? completedEvent.status : "unknown";
       const summary = completedEvent?.type === "run_completed" ? completedEvent.summary : "Test completed";
+
+      toolLogger.info(
+        { tool: "run_natural_test", success: status === "passed", projectId: project_id, status, stepCount: steps.length, eventCount: events.length, durationMs: Date.now() - startTime },
+        "Tool completed: run_natural_test"
+      );
 
       return {
         content: [{ type: "text" as const, text: `Test: "${query}"\nStatus: ${status}\n${summary}` }],
@@ -367,6 +407,10 @@ server.registerTool(
       };
     } catch (error) {
       const message = error instanceof Error ? error.message : "Unknown error";
+      toolLogger.error(
+        { tool: "run_natural_test", success: false, projectId: project_id, error: message, durationMs: Date.now() - startTime },
+        "Tool failed: run_natural_test"
+      );
       return {
         content: [{ type: "text" as const, text: `Error: ${message}` }],
         structuredContent: { error: message, events: [] },
@@ -403,7 +447,7 @@ expressApp.post("/proxy/test-cases/:testCaseId/runs/stream", async (req, res) =>
   const { testCaseId } = req.params;
   const { browser } = req.body;
 
-  console.log(`[Proxy] SSE request for test case ${testCaseId}`);
+  apiLogger.info({ endpoint: "proxy/test-cases/stream", testCaseId, browser }, "SSE proxy request");
 
   try {
     const response = await fetch(`${CHECKMATE_URL}/api/test-cases/${testCaseId}/runs/stream`, {
@@ -448,7 +492,7 @@ expressApp.post("/proxy/test-cases/:testCaseId/runs/stream", async (req, res) =>
 
     await pump();
   } catch (error) {
-    console.error("[Proxy] Error:", error);
+    apiLogger.error({ endpoint: "proxy/test-cases/stream", testCaseId, error }, "SSE proxy error");
     res.status(500).json({ error: error instanceof Error ? error.message : "Proxy error" });
   }
 });
@@ -457,7 +501,7 @@ expressApp.post("/proxy/test-cases/:testCaseId/runs/stream", async (req, res) =>
 expressApp.post("/proxy/test-runs/execute/stream", async (req, res) => {
   const { project_id, steps, browser, fixture_ids } = req.body;
 
-  console.log(`[Proxy] SSE request for execute steps in project ${project_id}`);
+  apiLogger.info({ endpoint: "proxy/test-runs/stream", projectId: project_id, stepCount: steps?.length }, "SSE proxy request");
 
   try {
     const response = await fetch(`${CHECKMATE_URL}/api/test-runs/execute/stream`, {
@@ -502,14 +546,14 @@ expressApp.post("/proxy/test-runs/execute/stream", async (req, res) => {
 
     await pump();
   } catch (error) {
-    console.error("[Proxy] Error:", error);
+    apiLogger.error({ endpoint: "proxy/test-runs/stream", projectId: project_id, error }, "SSE proxy error");
     res.status(500).json({ error: error instanceof Error ? error.message : "Proxy error" });
   }
 });
 
 // MCP endpoint
 expressApp.post("/mcp", async (req, res) => {
-  console.log("[MCP] POST request received");
+  apiLogger.debug({ endpoint: "/mcp", method: req.body?.method }, "MCP request received");
 
   const transport = new StreamableHTTPServerTransport({
     sessionIdGenerator: undefined,
@@ -524,12 +568,14 @@ expressApp.post("/mcp", async (req, res) => {
 
 // Start server
 expressApp.listen(PORT, () => {
-  console.log(`\nCheckmate MCP Server listening on http://localhost:${PORT}/mcp`);
-  console.log(`Health check: http://localhost:${PORT}/health`);
-  console.log(`Checkmate API: ${CHECKMATE_URL}`);
-  console.log(`\nTools available:`);
-  console.log(`  - list_projects (with fancy UI)`);
-  console.log(`  - list_test_cases`);
-  console.log(`  - run_test (with real-time UI)`);
-  console.log(`  - run_natural_test (with real-time UI)`);
+  serverLogger.info(
+    {
+      port: PORT,
+      mcpEndpoint: `http://localhost:${PORT}/mcp`,
+      healthEndpoint: `http://localhost:${PORT}/health`,
+      checkmateUrl: CHECKMATE_URL,
+      tools: ["list_projects", "list_test_cases", "run_test", "run_natural_test"],
+    },
+    "Checkmate MCP Server started"
+  );
 });
